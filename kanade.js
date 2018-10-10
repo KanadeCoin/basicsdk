@@ -129,7 +129,7 @@ Kanade.balanceOf = function(address, callback) {
     }
 
     try {
-        Kanade.contract.balanceOf(targetAddr, (err, balance) => {
+        Kanade.contract.balanceOf(targetAddr, function(err, balance) {
             if (err) {
                 console.log(err);
                 callback(Kanade.resultCode.ContractError, 0);
@@ -150,7 +150,7 @@ Kanade.getRandomBox = function(randomBoxId, callback) {
     }
 
     try {
-        Kanade.contract.getRandomBox(randomBoxId, (err, randomBox) => {
+        Kanade.contract.getRandomBox(randomBoxId, function(err, randomBox) {
             if (err) {
                 console.log(err);
                 callback(Kanade.resultCode.ContractError, null);
@@ -178,7 +178,7 @@ Kanade.getRandomItems = function(address, randomBoxId, callback) {
     }
 
     try {
-        Kanade.contract.getRandomItems(address, randomBoxId, (err, randomItems) => {
+        Kanade.contract.getRandomItems(address, randomBoxId, function(err, randomItems) {
             if (err) {
                 console.log(err);
                 callback(Kanade.resultCode.ContractError, null);
@@ -203,7 +203,7 @@ Kanade.drawRandomItem = function(randomBoxId, count, callback) {
     }
 
     try {
-        Kanade.contract.drawRandomItem(randomBoxId, count, (err, txHash) => {
+        Kanade.contract.drawRandomItem(randomBoxId, count, function(err, txHash) {
             if (err) {
                 console.log(err);
                 callback(Kanade.resultCode.ContractError, null);
@@ -229,7 +229,7 @@ Kanade.transfer = function(toAddr, amount, callback) {
     }
 
     try {
-        Kanade.contract.transfer(toAddr, amount, (err, txHash) => {
+        Kanade.contract.transfer(toAddr, amount, function(err, txHash) {
             if (err) {
                 console.log(err);
                 callback(Kanade.resultCode.ContractError, null);
