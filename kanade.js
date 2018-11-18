@@ -162,7 +162,7 @@ Kanade.disconnect = function() {
 // 残高確認
 Kanade.balanceOf = function(address, callback) {
     if (!Kanade.isInitialized) {
-        callback(Kanade.resultCode.ConnectionError, 0);
+        callback(Kanade.resultCode.InitializeError, 0);
         return;
     }
     if (typeof web3.eth.defaultAccount === 'undefined') {
@@ -183,7 +183,7 @@ Kanade.balanceOf = function(address, callback) {
 // ランダムボックスを確認
 Kanade.getRandomBox = function(randomBoxId, callback) {
     if (!Kanade.isInitialized) {
-        callback(Kanade.resultCode.ConnectionError, null);
+        callback(Kanade.resultCode.InitializeError, null);
         return;
     }
     if (typeof web3.eth.defaultAccount === 'undefined') {
@@ -211,7 +211,7 @@ Kanade.getRandomBox = function(randomBoxId, callback) {
 // ランダム数を確認
 Kanade.getRandomItems = function(address, randomBoxId, callback) {
     if (!Kanade.isInitialized) {
-        callback(Kanade.resultCode.ConnectionError, null);
+        callback(Kanade.resultCode.InitializeError, null);
         return;
     }
     if (typeof web3.eth.defaultAccount === 'undefined') {
@@ -236,7 +236,7 @@ Kanade.getRandomItems = function(address, randomBoxId, callback) {
 // ランダム数を購入
 Kanade.drawRandomItem = function(randomBoxId, count, callback) {
     if (!Kanade.isInitialized) {
-        callback(Kanade.resultCode.ConnectionError, null);
+        callback(Kanade.resultCode.InitializeError, null);
         return;
     }
     if (typeof web3.eth.defaultAccount === 'undefined') {
@@ -257,7 +257,7 @@ Kanade.drawRandomItem = function(randomBoxId, count, callback) {
 // 質問を生成する
 Kanade.createQuestion = function(id, recipient, finish, under, callback) {
     if (!Kanade.isInitialized) {
-        callback(Kanade.resultCode.ConnectionError, null);
+        callback(Kanade.resultCode.InitializeError, null);
         return;
     }
     if (typeof web3.eth.defaultAccount === 'undefined') {
@@ -278,7 +278,7 @@ Kanade.createQuestion = function(id, recipient, finish, under, callback) {
 // 質問情報を確認
 Kanade.getQuestion = function(id, callback) {
     if (!Kanade.isInitialized) {
-        callback(Kanade.resultCode.ConnectionError, null);
+        callback(Kanade.resultCode.InitializeError, null);
         return;
     }
     if (typeof web3.eth.defaultAccount === 'undefined') {
@@ -303,7 +303,7 @@ Kanade.getQuestion = function(id, callback) {
 // 質問に投票
 Kanade.vote = function(id, number, amount, callback) {
     if (!Kanade.isInitialized) {
-        callback(Kanade.resultCode.ConnectionError, null);
+        callback(Kanade.resultCode.InitializeError, null);
         return;
     }
     if (typeof web3.eth.defaultAccount === 'undefined') {
@@ -324,7 +324,7 @@ Kanade.vote = function(id, number, amount, callback) {
 // 質問情報を確認
 Kanade.getQuestionVotesAllCount = function(id, callback) {
     if (!Kanade.isInitialized) {
-        callback(Kanade.resultCode.ConnectionError, 0);
+        callback(Kanade.resultCode.InitializeError, 0);
         return;
     }
     if (typeof web3.eth.defaultAccount === 'undefined') {
@@ -345,7 +345,7 @@ Kanade.getQuestionVotesAllCount = function(id, callback) {
 // 質問情報を確認
 Kanade.getQuestionVote = function(id, position, callback) {
     if (!Kanade.isInitialized) {
-        callback(Kanade.resultCode.ConnectionError, null);
+        callback(Kanade.resultCode.InitializeError, null);
         return;
     }
     if (typeof web3.eth.defaultAccount === 'undefined') {
@@ -370,7 +370,7 @@ Kanade.getQuestionVote = function(id, position, callback) {
 // テキストデータを保存
 Kanade.putSaveData = function(text, callback) {
     if (!Kanade.isInitialized) {
-        callback(Kanade.resultCode.ConnectionError, null);
+        callback(Kanade.resultCode.InitializeError, null);
         return;
     }
     if (typeof web3.eth.defaultAccount === 'undefined') {
@@ -391,7 +391,7 @@ Kanade.putSaveData = function(text, callback) {
 // テキストデータを取得
 Kanade.getSaveData = function(address, callback) {
     if (!Kanade.isInitialized) {
-        callback(Kanade.resultCode.ConnectionError, null);
+        callback(Kanade.resultCode.InitializeError, null);
         return;
     }
     if (typeof web3.eth.defaultAccount === 'undefined') {
@@ -412,7 +412,7 @@ Kanade.getSaveData = function(address, callback) {
 // RAIN機能を実行
 Kanade.rain = function(recipients, values, callback) {
     if (!Kanade.isInitialized) {
-        callback(Kanade.resultCode.ConnectionError, null);
+        callback(Kanade.resultCode.InitializeError, null);
         return;
     }
     if (typeof web3.eth.defaultAccount === 'undefined') {
@@ -434,7 +434,7 @@ Kanade.rain = function(recipients, values, callback) {
 // 送金
 Kanade.transfer = function(toAddr, amount, callback) {
     if (!Kanade.isInitialized) {
-        callback(Kanade.resultCode.ConnectionError, null);
+        callback(Kanade.resultCode.InitializeError, null);
         return;
     }
     if (typeof web3.eth.defaultAccount === 'undefined') {
