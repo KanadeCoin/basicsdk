@@ -46,16 +46,31 @@ Kanade.connect = function(provider, callback) {
     tmpDecimals = null;
 
     if (provider === null && typeof window.web3 !== 'undefined') {
-        if (typeof web3.eth.defaultAccount === 'undefined') {
-            Kanade.disconnect();
+        if (!useEthClient()) {
+            console.log("kanade:initial try-1");
             setTimeout(function() {
-                callback(Kanade.resultCode.NoLoginError);
-            }, 0);
-            return;
+                if (!useEthClient()) {
+                    console.log("kanade:initial try-2");
+                    setTimeout(function() {
+                        if (!useEthClient()) {
+                            console.log("kanade:initial try-3");
+                            callback(Kanade.resultCode.NoLoginError);
+                        }
+                    }, 2000);
+                }
+            }, 2000);
         }
-        window.web3 = new window.Web3(window.web3.currentProvider);
-        Kanade.contract = window.web3.eth.contract(Kanade.ABI).at(Kanade.contractAddress);
-        startGetInitialDatas(callback);
+
+        function useEthClient() {
+            if (typeof web3.eth.defaultAccount === 'undefined') {
+                return false;
+            }
+            window.web3 = new window.Web3(window.web3.currentProvider);
+            Kanade.contract = window.web3.eth.contract(Kanade.ABI).at(Kanade.contractAddress);
+            startGetInitialDatas(callback);
+            return true;
+        }
+
         return;
     }
 
