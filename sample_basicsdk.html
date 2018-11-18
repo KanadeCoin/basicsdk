@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>KanadeCoinBasicSDK Sample</title>
+</head>
+<body>
+    <button onclick="transferKNDC(100)">Transfer: 100 KNDC</button><br>
+    <button onclick="balanceOf()">balanceOf</button><br>
+    <button onclick="rain()">rain</button><br>
+    <button onclick="createQuestion()">createQuestion</button><br>
+    <button onclick="getQuestion()">getQuestion</button><br>
+    <button onclick="vote()">vote</button><br>
+    <button onclick="getQuestionVotesAllCount()">getQuestionVotesAllCount</button><br>
+    <button onclick="getQuestionVote()">getQuestionVote</button><br>
+    <button onclick="putSaveData()">putSaveData</button><br>
+    <button onclick="getSaveData()">getSaveData</button><br>
+
+
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/KanadeCoin/basicsdk@v0.1.1/kanade.js"></script>
+    <script>
+        var yourEthAddr = "0x1234567890123456789012345678901234567891";
+
+        var transferTargetEthAddr = "0x0000000000000000000000000000000000000099";
+
+        var rainTargetEthAddr1 = "0x0000000000000000000000000000000000000001";
+        var rainTargetEthAddr2 = "0x0000000000000000000000000000000000000002";
+        var rainTargetEthAddr3 = "0x0000000000000000000000000000000000000003";
+
+
+        if (yourEthAddr == "0x1234567890123456789012345678901234567890") {
+            alert("Change demo params!!");
+        } else {
+            Kanade.connect(null, function(resultCode) {
+                if (resultCode != Kanade.resultCode.Success) {
+                    alert("initial error...");
+                }
+            });
+        }
+
+
+        function transferKNDC(amount) {
+            var decimalsAmount = amount * Math.pow(10, Kanade.decimals);
+            Kanade.transfer(transferTargetEthAddr, decimalsAmount, function(resultCode, txHash) {
+                if (resultCode == Kanade.resultCode.Success) {
+                    alert("sent!!\nTX : " + txHash);
+                } else {
+                    alert('error!');
+                }
+            });
+        }
+
+        function balanceOf() {
+            Kanade.balanceOf(yourEthAddr, function(resultCode, balance) {
+                if (resultCode != Kanade.resultCode.Success) {
+                    alert("error!");
+                    return;
+                }
+                alert(balance);
+            });
+        }
+
+        function rain() {
+            addrs = [rainTargetEthAddr1, rainTargetEthAddr2, rainTargetEthAddr3];
+            values = [1000000000, 2000000000, 3000000000];
+            Kanade.rain(addrs, values, function(resultCode, txHash) {
+                if (resultCode != Kanade.resultCode.Success) {
+                    alert("error!");
+                    return;
+                }
+                alert(txHash);
+            });
+        }
+
+        function createQuestion() {
+            id = "testXYZ";
+            recipient = yourEthAddr;
+            finish = 1574087978;
+            under = 1000000000;
+            Kanade.createQuestion(id, recipient, finish, under, function(resultCode, txHash) {
+                if (resultCode != Kanade.resultCode.Success) {
+                    alert("error!");
+                    return;
+                }
+                alert(txHash);
+            });
+        }
+
+        function getQuestion() {
+            id = "testXYZ";
+            Kanade.getQuestion(id, function(resultCode, question) {
+                if (resultCode != Kanade.resultCode.Success) {
+                    alert("error!");
+                    return;
+                }
+                alert(question);
+            });
+        }
+
+        function vote() {
+            id = "testXYZ";
+            number = 2;
+            amount = 1100000000;
+            Kanade.vote(id, number, amount, function(resultCode, txHash) {
+                if (resultCode != Kanade.resultCode.Success) {
+                    alert("error!");
+                    return;
+                }
+                alert(txHash);
+            });
+        }
+
+        function getQuestionVotesAllCount() {
+            id = "testXYZ";
+            Kanade.getQuestionVotesAllCount(id, function(resultCode, votesAllCount) {
+                if (resultCode != Kanade.resultCode.Success) {
+                    alert("error!");
+                    return;
+                }
+                alert(votesAllCount);
+            });
+        }
+
+        function getQuestionVote() {
+            id = "testXYZ";
+            position = 0;
+            Kanade.getQuestionVote(id, position, function(resultCode, voteInfo) {
+                if (resultCode != Kanade.resultCode.Success) {
+                    alert("error!");
+                    return;
+                }
+                alert(voteInfo);
+            });
+        }
+
+        function putSaveData() {
+            text = "testtest11112222testtest11112222testtest11113333";
+            Kanade.putSaveData(text, function(resultCode, txHash) {
+                if (resultCode != Kanade.resultCode.Success) {
+                    alert("error!");
+                    return;
+                }
+                alert(txHash);
+            });
+        }
+
+        function getSaveData() {
+            address = yourEthAddr;
+            Kanade.getSaveData(address, function(resultCode, text) {
+                if (resultCode != Kanade.resultCode.Success) {
+                    alert("error!");
+                    return;
+                }
+                alert(text);
+            });
+        }
+    </script>
+
+</body>
+</html>
