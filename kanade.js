@@ -1,5 +1,5 @@
 //
-// KanadeCoinBasicSDK v0.0.3
+// KanadeCoinBasicSDK v0.1.0
 // https://kanadecoin.com/
 //
 // Copyright 2018 monolitht
@@ -8,6 +8,9 @@
 
 // KanadeCoinオブエジェクト
 var Kanade = {};
+
+// KanadeCoinのプラグイン用
+Kanade.plugins = {};
 
 // KanadeCoinのコントラクトアドレス
 Kanade.contractAddress = "0x8E5610ab5E39d26828167640EA29823fe1dD5843";
@@ -25,7 +28,7 @@ Kanade.resultCode = {
     ContractError    : 20,
     ArgumentError    : 30,
     InitializeError  : 40,
-    LockError        : 50
+    NoLoginError     : 50
 };
 
 // 基本情報
@@ -43,9 +46,16 @@ Kanade.connect = function(provider, callback) {
     tmpDecimals = null;
 
     if (provider === null && typeof window.web3 !== 'undefined') {
+        if (typeof web3.eth.defaultAccount === 'undefined') {
+            Kanade.disconnect();
+            setTimeout(function() {
+                callback(Kanade.resultCode.NoLoginError);
+            }, 0);
+            return;
+        }
         window.web3 = new window.Web3(window.web3.currentProvider);
         Kanade.contract = window.web3.eth.contract(Kanade.ABI).at(Kanade.contractAddress);
-        getInitialDatas();
+        startGetInitialDatas(callback);
         return;
     }
 
@@ -54,46 +64,74 @@ Kanade.connect = function(provider, callback) {
         window.web3 = new window.Web3();
         window.web3.setProvider(new web3.providers.HttpProvider(provider));
         Kanade.contract = window.web3.eth.contract(Kanade.ABI).at(Kanade.contractAddress);
-        getInitialDatas();
+        startGetInitialDatas(callback);
         return;
     }
 
-    disconnect();
+    Kanade.disconnect();
     setTimeout(function() {
         callback(Kanade.resultCode.ArgumentError);
     }, 0);
     return;
 
-    function getInitialDatas() {
+    function startGetInitialDatas(callback) {
+        getInitialDataName(callback);
+    }
+
+    function getInitialDataName(callback) {
         Kanade.contract.name(function(err, name) {
             if (err) {
-                console.log(err);
-                tmpName = "";
+                Kanade.contract.name(function(err, name) {
+                    if (disconnectAndCallback(err, callback)) { return; }
+                    tmpName = name;
+                    getInitialDataDecimals(callback);
+                });
             } else {
                 tmpName = name;
+                getInitialDataDecimals(callback);
             }
-            finishInitialize(callback);
         });
+    }
 
+    function getInitialDataDecimals(callback) {
         Kanade.contract.decimals(function(err, decimals) {
             if (err) {
-                console.log(err);
-                tmpDecimals = -1;
+                Kanade.contract.decimals(function(err, decimals) {
+                    if (disconnectAndCallback(err, callback)) { return; }
+                    tmpDecimals = decimals.toNumber();
+                    getInitialDataSymbol(callback);
+                });
             } else {
                 tmpDecimals = decimals.toNumber();
+                getInitialDataSymbol(callback);
             }
-            finishInitialize(callback);
         });
+    }
 
+    function getInitialDataSymbol(callback) {
         Kanade.contract.symbol(function(err, symbol) {
             if (err) {
-                console.log(err);
-                tmpSymbol = "";
+                Kanade.contract.symbol(function(err, symbol) {
+                    if (disconnectAndCallback(err, callback)) { return; }
+                    tmpSymbol = symbol;
+                    finishInitialize(callback);
+                });
             } else {
                 tmpSymbol = symbol;
+                finishInitialize(callback);
             }
-            finishInitialize(callback);
         });
+    }
+
+    function disconnectAndCallback(err, callback) {
+        if (err) {
+            console.log(err);
+            Kanade.disconnect();
+            callback(Kanade.resultCode.InitializeError);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     function finishInitialize(callback) {
@@ -105,139 +143,311 @@ Kanade.connect = function(provider, callback) {
                 Kanade.decimals = tmpDecimals;
                 callback(Kanade.resultCode.Success);
             } else {
-                disconnect();
+                Kanade.disconnect();
                 callback(Kanade.resultCode.InitializeError);
             }
         }
     }
-
-    function disconnect() {
-        window.web3 = undefined;
-        Kanade.contract = null;
-        Kanade.isInitialized = false;
-        Kanade.name     = null;
-        Kanade.symbol   = null;
-        Kanade.decimals = null;
-    }
 };
+
+// 切断
+Kanade.disconnect = function() {
+    Kanade.contract      = null;
+    Kanade.isInitialized = false;
+    Kanade.name          = null;
+    Kanade.symbol        = null;
+    Kanade.decimals      = null;
+}
 
 // 残高確認
 Kanade.balanceOf = function(address, callback) {
     if (!Kanade.isInitialized) {
-        callback(Kanade.resultCode.InitializeError, 0);
+        callback(Kanade.resultCode.ConnectionError, 0);
+        return;
+    }
+    if (typeof web3.eth.defaultAccount === 'undefined') {
+        callback(Kanade.resultCode.NoLoginError, 0);
         return;
     }
 
-    try {
-        Kanade.contract.balanceOf(targetAddr, function(err, balance) {
-            if (err) {
-                console.log(err);
-                callback(Kanade.resultCode.ContractError, 0);
-            } else {
-                callback(Kanade.resultCode.Success, balance);
-            }
-        });
-    } catch (e) {
-        callback(Kanade.resultCode.ConnectionError, 0);
-    }
+    Kanade.contract.balanceOf(address, function(err, balance) {
+        if (err) {
+            console.log(err);
+            callback(Kanade.resultCode.ContractError, 0);
+        } else {
+            callback(Kanade.resultCode.Success, balance);
+        }
+    });
 };
 
 // ランダムボックスを確認
 Kanade.getRandomBox = function(randomBoxId, callback) {
     if (!Kanade.isInitialized) {
-        callback(Kanade.resultCode.InitializeError, null);
+        callback(Kanade.resultCode.ConnectionError, null);
+        return;
+    }
+    if (typeof web3.eth.defaultAccount === 'undefined') {
+        callback(Kanade.resultCode.NoLoginError, null);
         return;
     }
 
-    try {
-        Kanade.contract.getRandomBox(randomBoxId, function(err, randomBox) {
-            if (err) {
-                console.log(err);
-                callback(Kanade.resultCode.ContractError, null);
-            } else {
-                var result = {
-                    isStarted : (randomBox[0].toNumber() == 1),
-                    recipient : randomBox[1].toString(16),
-                    volume    : randomBox[2],
-                    amount    : randomBox[3],
-                    finish    : randomBox[4]
-                };
-                callback(Kanade.resultCode.Success, result);
-            }
-        });
-    } catch (e) {
-        callback(Kanade.resultCode.ConnectionError, null);
-    }
+    Kanade.contract.getRandomBox(randomBoxId, function(err, randomBox) {
+        if (err) {
+            console.log(err);
+            callback(Kanade.resultCode.ContractError, null);
+        } else {
+            var result = {
+                isStarted : (randomBox[0].toNumber() == 1),
+                recipient : randomBox[1].toString(16),
+                volume    : randomBox[2],
+                amount    : randomBox[3],
+                finish    : randomBox[4]
+            };
+            callback(Kanade.resultCode.Success, result);
+        }
+    });
 }
 
 // ランダム数を確認
 Kanade.getRandomItems = function(address, randomBoxId, callback) {
     if (!Kanade.isInitialized) {
-        callback(Kanade.resultCode.InitializeError, null);
+        callback(Kanade.resultCode.ConnectionError, null);
+        return;
+    }
+    if (typeof web3.eth.defaultAccount === 'undefined') {
+        callback(Kanade.resultCode.NoLoginError, null);
         return;
     }
 
-    try {
-        Kanade.contract.getRandomItems(address, randomBoxId, function(err, randomItems) {
-            if (err) {
-                console.log(err);
-                callback(Kanade.resultCode.ContractError, null);
-            } else {
-                var items = [];
-                for (var i = 0; i < randomItems.length; i++) {
-                    items.push(randomItems[i].toNumber());
-                }
-                callback(Kanade.resultCode.Success, items);
+    Kanade.contract.getRandomItems(address, randomBoxId, function(err, randomItems) {
+        if (err) {
+            console.log(err);
+            callback(Kanade.resultCode.ContractError, null);
+        } else {
+            var items = [];
+            for (var i = 0; i < randomItems.length; i++) {
+                items.push(randomItems[i].toNumber());
             }
-        });
-    } catch (e) {
-        callback(Kanade.resultCode.ConnectionError, null);
-    }
+            callback(Kanade.resultCode.Success, items);
+        }
+    });
 }
 
 // ランダム数を購入
 Kanade.drawRandomItem = function(randomBoxId, count, callback) {
     if (!Kanade.isInitialized) {
-        callback(Kanade.resultCode.InitializeError, null);
+        callback(Kanade.resultCode.ConnectionError, null);
+        return;
+    }
+    if (typeof web3.eth.defaultAccount === 'undefined') {
+        callback(Kanade.resultCode.NoLoginError, null);
         return;
     }
 
-    try {
-        Kanade.contract.drawRandomItem(randomBoxId, count, function(err, txHash) {
-            if (err) {
-                console.log(err);
-                callback(Kanade.resultCode.ContractError, null);
-            } else {
-                callback(Kanade.resultCode.Success, txHash);
-            }
-        });
-    } catch (e) {
-        callback(Kanade.resultCode.ConnectionError, null);
-    }
+    Kanade.contract.drawRandomItem(randomBoxId, count, function(err, txHash) {
+        if (err) {
+            console.log(err);
+            callback(Kanade.resultCode.ContractError, null);
+        } else {
+            callback(Kanade.resultCode.Success, txHash);
+        }
+    });
 }
+
+// 質問を生成する
+Kanade.createQuestion = function(id, recipient, finish, under, callback) {
+    if (!Kanade.isInitialized) {
+        callback(Kanade.resultCode.ConnectionError, null);
+        return;
+    }
+    if (typeof web3.eth.defaultAccount === 'undefined') {
+        callback(Kanade.resultCode.NoLoginError, null);
+        return;
+    }
+
+    Kanade.contract.createQuestion(id, recipient, finish, under, function(err, txHash) {
+        if (err) {
+            console.log(err);
+            callback(Kanade.resultCode.ContractError, null);
+        } else {
+            callback(Kanade.resultCode.Success, txHash);
+        }
+    });
+}
+
+// 質問情報を確認
+Kanade.getQuestion = function(id, callback) {
+    if (!Kanade.isInitialized) {
+        callback(Kanade.resultCode.ConnectionError, null);
+        return;
+    }
+    if (typeof web3.eth.defaultAccount === 'undefined') {
+        callback(Kanade.resultCode.NoLoginError, null);
+        return;
+    }
+
+    Kanade.contract.getQuestion(id, function(err, questions) {
+        if (err) {
+            console.log(err);
+            callback(Kanade.resultCode.ContractError, null);
+        } else {
+            var items = [];
+            for (var i = 0; i < questions.length; i++) {
+                items.push(questions[i].toNumber());
+            }
+            callback(Kanade.resultCode.Success, items);
+        }
+    });
+}
+
+// 質問に投票
+Kanade.vote = function(id, number, amount, callback) {
+    if (!Kanade.isInitialized) {
+        callback(Kanade.resultCode.ConnectionError, null);
+        return;
+    }
+    if (typeof web3.eth.defaultAccount === 'undefined') {
+        callback(Kanade.resultCode.NoLoginError, null);
+        return;
+    }
+
+    Kanade.contract.vote(id, number, amount, function(err, txHash) {
+        if (err) {
+            console.log(err);
+            callback(Kanade.resultCode.ContractError, null);
+        } else {
+            callback(Kanade.resultCode.Success, txHash);
+        }
+    });
+}
+
+// 質問情報を確認
+Kanade.getQuestionVotesAllCount = function(id, callback) {
+    if (!Kanade.isInitialized) {
+        callback(Kanade.resultCode.ConnectionError, 0);
+        return;
+    }
+    if (typeof web3.eth.defaultAccount === 'undefined') {
+        callback(Kanade.resultCode.NoLoginError, 0);
+        return;
+    }
+
+    Kanade.contract.getQuestionVotesAllCount(id, function(err, votesAllCount) {
+        if (err) {
+            console.log(err);
+            callback(Kanade.resultCode.ContractError, 0);
+        } else {
+            callback(Kanade.resultCode.Success, votesAllCount);
+        }
+    });
+}
+
+// 質問情報を確認
+Kanade.getQuestionVote = function(id, position, callback) {
+    if (!Kanade.isInitialized) {
+        callback(Kanade.resultCode.ConnectionError, null);
+        return;
+    }
+    if (typeof web3.eth.defaultAccount === 'undefined') {
+        callback(Kanade.resultCode.NoLoginError, null);
+        return;
+    }
+
+    Kanade.contract.getQuestionVote(id, position, function(err, voteInfo) {
+        if (err) {
+            console.log(err);
+            callback(Kanade.resultCode.ContractError, null);
+        } else {
+            var items = [];
+            for (var i = 0; i < voteInfo.length; i++) {
+                items.push(voteInfo[i].toNumber());
+            }
+            callback(Kanade.resultCode.Success, items);
+        }
+    });
+}
+
+// テキストデータを保存
+Kanade.putSaveData = function(text, callback) {
+    if (!Kanade.isInitialized) {
+        callback(Kanade.resultCode.ConnectionError, null);
+        return;
+    }
+    if (typeof web3.eth.defaultAccount === 'undefined') {
+        callback(Kanade.resultCode.NoLoginError, null);
+        return;
+    }
+
+    Kanade.contract.putSaveData(text, function(err, txHash) {
+        if (err) {
+            console.log(err);
+            callback(Kanade.resultCode.ContractError, null);
+        } else {
+            callback(Kanade.resultCode.Success, txHash);
+        }
+    });
+}
+
+// テキストデータを取得
+Kanade.getSaveData = function(address, callback) {
+    if (!Kanade.isInitialized) {
+        callback(Kanade.resultCode.ConnectionError, null);
+        return;
+    }
+    if (typeof web3.eth.defaultAccount === 'undefined') {
+        callback(Kanade.resultCode.NoLoginError, null);
+        return;
+    }
+
+    Kanade.contract.getSaveData(address, function(err, text) {
+        if (err) {
+            console.log(err);
+            callback(Kanade.resultCode.ContractError, null);
+        } else {
+            callback(Kanade.resultCode.Success, text);
+        }
+    });
+}
+
+// RAIN機能を実行
+Kanade.rain = function(recipients, values, callback) {
+    if (!Kanade.isInitialized) {
+        callback(Kanade.resultCode.ConnectionError, null);
+        return;
+    }
+    if (typeof web3.eth.defaultAccount === 'undefined') {
+        callback(Kanade.resultCode.NoLoginError, null);
+        return;
+    }
+
+    Kanade.contract.rain(recipients, values, function(err, txHash) {
+        if (err) {
+            console.log(err);
+            callback(Kanade.resultCode.ContractError, null);
+        } else {
+            callback(Kanade.resultCode.Success, txHash);
+        }
+    });
+}
+
 
 // 送金
 Kanade.transfer = function(toAddr, amount, callback) {
     if (!Kanade.isInitialized) {
-        callback(Kanade.resultCode.InitializeError, null);
-        return;
-    }
-
-    if (typeof window.web3.eth.defaultAccount === 'undefined') {
-        callback(Kanade.resultCode.LockError, null);
-        return;
-    }
-
-    try {
-        Kanade.contract.transfer(toAddr, amount, function(err, txHash) {
-            if (err) {
-                console.log(err);
-                callback(Kanade.resultCode.ContractError, null);
-            } else {
-                callback(Kanade.resultCode.Success, txHash);
-            }
-        });
-    } catch (e) {
         callback(Kanade.resultCode.ConnectionError, null);
+        return;
     }
+    if (typeof web3.eth.defaultAccount === 'undefined') {
+        callback(Kanade.resultCode.NoLoginError, null);
+        return;
+    }
+
+    Kanade.contract.transfer(toAddr, amount, function(err, txHash) {
+        if (err) {
+            console.log(err);
+            callback(Kanade.resultCode.ContractError, null);
+        } else {
+            callback(Kanade.resultCode.Success, txHash);
+        }
+    });
 }
